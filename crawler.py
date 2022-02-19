@@ -12,14 +12,14 @@ def main():
     #Add url to the queue
     queue = []
     #seed = input("Seed URL: ")
-    seed = "https://www.cpp.edu/index.shtml"
+    seed = "https://www.japscan.ws/"
     domain = seed.split("/")[2]
     queue.append(seed)
 
     
     
 
-    while((depth < maxDepth) or queue.empty()):
+    while((depth < maxDepth) or (len(queue) == 0)):
         depth += 1
         if(depth%20 == 0):
             print("depth: " + str(depth))
