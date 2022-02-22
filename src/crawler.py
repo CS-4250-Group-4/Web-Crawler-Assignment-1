@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 import csv
 import requests
 import time
@@ -17,7 +18,7 @@ def save_report_csv():
         csvwriter.writerows(report_info)
 
 
-def main():
+def run_crawler(seed):
     debug = True
     depth = 0
     maxDepth = 100
@@ -27,11 +28,16 @@ def main():
     # Check robots.txt for any restricted pages
     # Add url to the queue
     queue = []
-    #seed = input("Seed URL: ")
-    seed = "https://www.japscan.ws/"
+
     domain = seed.split("/")[2]
     queue.append(seed)
-    report = {}
+
+    session = requests.Session()
+    session.headers.update({'Host': domain,
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Connection': 'keep-alive',
+                            'Pragma': 'no-cache',
+                            'Cache-Control': 'no-cache'})
 
     while((depth < maxDepth) or (len(queue) == 0)):
         depth += 1
@@ -41,8 +47,22 @@ def main():
         if(debug):
             print("requesting: " + currentUrl)
         visited.append(currentUrl)
-        page = requests.get(currentUrl)
-        # time.sleep(.01)
+
+        try:
+            page = session.get(currentUrl, timeout=5)
+        except requests.exceptions.Timeout:
+            num_try = 0
+            while(num_try < 5):
+                time.sleep(5)
+                page = session.get(currentUrl, timeout=15)
+                if(page is not NULL):
+                    break
+                num_try += 1
+        except requests.exceptions.TooManyRedirects:
+            print('Bad url')
+        except requests.exceptions.RequestException as e:
+            raise SystemExit(e)
+
         soup = BeautifulSoup(page.text, 'html.parser')
         outlinks = soup.find_all("a", href=True)
         # call split on link for # and only check first half
@@ -85,13 +105,17 @@ def main():
               "\tVisited length: " + str(len(visited)))
 
     save_report_csv()
-    # Main loop
-    # Get url from queue
-    # Requests get url
-    # handle any errors 404, etc.
-    #Find <a> tags
-    # check same domain, check depth limit, allowed in robots.txt
-    # Add links to queue
 
 
-main()
+def main():
+    # seed = "https://www.japscan.ws/"
+    while(True):
+        seed = input('Enter seed URL (or \'exit\' to end): \n')
+        if(seed == 'exit'):
+            break
+        else:
+            run_crawler(seed)
+
+
+if __name__ == '__main__':
+    main()
