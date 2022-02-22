@@ -21,7 +21,7 @@ def save_report_csv():
 def run_crawler(seed):
     debug = True
     depth = 0
-    maxDepth = 100
+    maxDepth = 500
 
     visited = []
     # Prompt user for seed URL (hardcoded for now)
@@ -54,7 +54,7 @@ def run_crawler(seed):
             num_try = 0
             while(num_try < 5):
                 time.sleep(5)
-                page = session.get(currentUrl, timeout=15)
+                page = session.get(currentUrl, timeout=25)
                 if(page is not NULL):
                     break
                 num_try += 1
