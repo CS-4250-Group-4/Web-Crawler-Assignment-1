@@ -57,7 +57,7 @@ def main():
             elif link[0:4] == "http":
                 if(domain == link.split("/")[2]):
                     #print("adding " + link["href"])
-                    if((link not in visited) and (link not in queue) and (link not in skipPages)):
+                    if((link not in visited) and (link not in queue)):
                         queue.append(link)
             else:
                 #print("appending then adding " + link["href"])
@@ -70,7 +70,7 @@ def main():
                 if(link[0] != "/"):
                     link = "/" + link
                 newLink = "https://" + domain + link
-                if((newLink not in visited) and (newLink not in queue) and (newLink not in skipPages)):
+                if((newLink not in visited) and (newLink not in queue)):
                     queue.append(newLink)
     if (debug):
         for link in queue:
