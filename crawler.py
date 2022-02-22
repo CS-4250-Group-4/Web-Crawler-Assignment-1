@@ -1,10 +1,11 @@
+from typing import Counter
 import requests, time
 from bs4 import BeautifulSoup
 
 def main():
     debug = True
     depth = 0
-    maxDepth = 500
+    maxDepth = 300
     
     visited = []
     #Prompt user for seed URL (hardcoded for now)
@@ -72,15 +73,71 @@ def main():
                 newLink = "https://" + domain + link
                 if((newLink not in visited) and (newLink not in queue)):
                     queue.append(newLink)
+        
     if (debug):
         for link in queue:
             print(link)
         print("\n\nVISITED\n")
         for link in visited:
             print(link)
+            #start_wordcount(seed)
+
+        #Testing Purposes:
+        start_wordcount(seed)
+        
         print()
         print("Queue length: " + str(len(queue)) + "\tVisited length: " + str(len(visited)))
-                    
+
+
+def start_wordcount(url):
+    #Create empty list for words that need to be cleaned
+    word_list = []
+    page = requests.get(url).text
+    soup = BeautifulSoup(page, 'html.parser')
+
+    #Get text from the page
+    for each_text in soup.findAll(text=True):
+        content = each_text.text
+        words = content.lower().split()
+        #Append it to the wordlist and then clean the words of all symbols
+        for each_word in words:
+            word_list.append(each_word)
+            clean_wordlist(word_list)
+
+def clean_wordlist(word_list):
+    clean_list = []
+
+    #Clean the words from any symbols
+    for word in word_list:
+        symbols = '!@#$%^&*()_-+={[}]|\;:"<>?/., '
+        for i in range (0, len(symbols)):
+            word = word.replace (symbols[i], '')
+        if len(word) > 0:
+            clean_list.append(word)
+    
+    #Create a dictionary of all the words and start counting
+    word_frequency = create_dictionary(clean_list)
+    print(word_frequency)
+    return word_frequency
+
+def create_dictionary(clean_list):
+    #Create word count dictionary
+    word_count = {}
+
+    #Check if word is already in list, if so then add to its counter, if not then add word and begin counting
+    for word in clean_list:
+        if word in word_count:
+            word_count[word] += 1
+        else:
+            word_count[word] = 1
+    
+    #Sort using Counter
+    counter = Counter(word_count)
+
+    #TODO: Change to top 100 when done testing
+    most_frequent = counter.most_common(10)
+    return most_frequent
+
     #Main loop
         #Get url from queue
         #Requests get url
@@ -88,8 +145,5 @@ def main():
         #Find <a> tags
             #check same domain, check depth limit, allowed in robots.txt
         #Add links to queue
-
-
-
 
 main()
