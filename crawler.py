@@ -127,6 +127,8 @@ def crawl(seed):
         print("\nQueue length: " + str(len(queue)) +
               "\tVisited length: " + str(len(visited)))
 
+    save_report_csv()
+
 def save_wordcount_csv(most_frequent):
     fields = ['Word', 'Count']
     most_frequent.insert(0, fields)
@@ -212,8 +214,8 @@ def save_report_csv():
 def main():
     # seed = "https://www.japscan.ws/"
     while(True):
-        seed = input('Enter seed URL (or \'exit\' to end): \n')
-        if(seed == 'exit'):
+        seed = input('Enter seed URL (or \'done\' to end): \n')
+        if(seed == 'done'):
             break
         else:
             crawl(seed)
