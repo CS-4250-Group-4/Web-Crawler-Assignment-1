@@ -1,13 +1,14 @@
+from itertools import count
 import requests, time, csv, os
 from bs4 import BeautifulSoup
 from typing import Counter
 from asyncio.windows_events import NULL
 
-
 report_info = []
 disallowed_url_arr = []
 seed_count = 0
 word_count = {}
+
 #Check if the repository folder exists, if it doesnt make it
 savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\"
 if not os.path.exists(savePath):
@@ -15,25 +16,21 @@ if not os.path.exists(savePath):
     
 session = requests.Session()
 
-def crawl(seed):
+def crawl(seed, count_seed):
     debug = True
     depth = 0
-    maxDepth = 500
+    maxDepth = 350
     visited = []
-    #Prompt user for seed URL (hardcoded for now)
+    
     #Check robots.txt for any restricted pages
     #Add url to the queue
     queue = []
-    #seed = input("Seed URL: ")
 
     #Seeds
         #https://www.cpp.edu/index.shtml
-        #https://ur.medeqipexp.com/ or https://ameblo.jp/ 
+        #https://ur.medeqipexp.com/
         #https://www.japscan.ws/ 
-    #seed = "https://www.cpp.edu/index.shtml"
-    #seed = "https://ur.medeqipexp.com/"
-    #seed = "https://ameblo.jp/"
-    #seed = "https://www.japscan.ws/"
+
     domain = seed.split("/")[2]
     queue.append(seed)
 
@@ -47,7 +44,13 @@ def crawl(seed):
         depth += 1
         num_outLinks = 0
         currentUrl = queue.pop(0)
-        
+
+        if depth == 1:
+            get_html = requests.get(currentUrl).content
+            soup_lang = BeautifulSoup(get_html, 'html.parser')
+            print("Language is: " + soup_lang.html["lang"])
+
+
         #Every 20 pages print show the depth in the console
         if(depth%20 == 0):
             print("depth: " + str(depth) + "/" + str(maxDepth))
@@ -86,6 +89,7 @@ def crawl(seed):
         #time.sleep(.01)
         soup = BeautifulSoup(page.text, 'html.parser')
         outlinks = soup.find_all("a", href=True)
+
         # call split on link for # and only check first half
         # ex https://docs.python-requests.org/en/latest/#the-contributor-guide
         # ignore #the-contributor-guide and just go to https://docs.python-requests.org/en/latest/
@@ -125,7 +129,7 @@ def crawl(seed):
     #Get top 100 words with count and write to .csv file
     counter = Counter(word_count)
     most_frequent = counter.most_common(100)    
-    save_wordcount_csv(most_frequent)
+    save_wordcount_csv(most_frequent, count_seed)
     word_count.clear()
 
     if (debug):
@@ -137,24 +141,24 @@ def crawl(seed):
         print("\nQueue length: " + str(len(queue)) +
               "\tVisited length: " + str(len(visited)))
 
-    save_report_csv()
+    save_report_csv(count_seed)
 
-def save_wordcount_csv(most_frequent):
+def save_wordcount_csv(most_frequent, count_seed):
     fields = ['Word', 'Count']
     most_frequent.insert(0, fields)
-    filename = "wordCount.csv"
+    filename = "words" + str(count_seed) + ".csv"
 
-    # writing to csv file
+    #Writing to csv file
     with open(filename, 'w', encoding="utf-8") as csvfile:
         csvwriter = csv.writer(csvfile, lineterminator='\n')
         csvwriter.writerows(most_frequent)
+    count_seed = count_seed + 1
 
 def start_wordcount(url):
     #Create empty list for words that need to be cleaned
     word_list = []
     page = url
     soup = BeautifulSoup(page.text, 'html.parser')
-
     tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']
     #Get text from the page
     for each_text in soup.findAll(tags):
@@ -202,34 +206,33 @@ def init_robot_info(link):
             if((line_arr[0] == 'Disallow:') and (line_arr[1] is not NULL)):
                 disallowed_url_arr.append(line_arr[1])
 
-
 def isAllowed(link):
     for text in disallowed_url_arr:
         if(text in link):
             return False
     return True
 
-
-def save_report_csv():
+def save_report_csv(count_seed):
     global seed_count
     fields = ['URL', 'Number of outlinks']
     report_info.insert(0, fields)
-    filename = "report" + str(seed_count) + ".csv"
+    filename = "report" + str(count_seed) + ".csv"
 
     # writing to csv file
     with open(filename, 'w', ) as csvfile:
         csvwriter = csv.writer(csvfile, lineterminator='\n')
         csvwriter.writerows(report_info)
-
+    report_info.clear()
+    
 def main():
-    # seed = "https://www.japscan.ws/"
+    count_seed = 0
     while(True):
         seed = input('Enter seed URL (or \'done\' to end): \n')
         if(seed == 'done'):
             break
         else:
-            crawl(seed)
-
+            count_seed = count_seed + 1
+            crawl(seed, count_seed)
 
 if __name__ == '__main__':
     main()
