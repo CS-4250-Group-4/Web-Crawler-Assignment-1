@@ -143,9 +143,10 @@ def start_wordcount(url):
     page = url
     soup = BeautifulSoup(page.text, 'html.parser')
 
+    tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']
     #Get text from the page
-    for each_text in soup.findAll(p):
-        content = each_text
+    for each_text in soup.findAll(tags):
+        content = each_text.text
         words = content.lower().split()
         #Append it to the wordlist and then clean the words of all symbols
         for each_word in words:
