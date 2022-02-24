@@ -133,7 +133,7 @@ def save_wordcount_csv(most_frequent):
     filename = "wordCount.csv"
 
     # writing to csv file
-    with open(filename, 'w', ) as csvfile:
+    with open(filename, 'w', encoding="utf-8") as csvfile:
         csvwriter = csv.writer(csvfile, lineterminator='\n')
         csvwriter.writerows(most_frequent)
 
