@@ -5,12 +5,40 @@ import time
 from bs4 import BeautifulSoup
 
 report_info = []
+disallowed_url_arr = []
+seed_count = 0
+
+session = requests.Session()
+
+
+def init_robot_info(link):
+    disallowed_url_arr.clear()
+    url = link + 'robots.txt'
+    robot_txt = session.get(url, timeout=5).text
+
+    robot_txt_lines = robot_txt.split('\n')
+    if(len(robot_txt_lines) == 0):
+        return
+
+    for line in robot_txt_lines:
+        line_arr = line.split(' ')
+        if(len(line_arr) > 1):
+            if((line_arr[0] == 'Disallow:') and (line_arr[1] is not NULL)):
+                disallowed_url_arr.append(line_arr[1])
+
+
+def isAllowed(link):
+    for text in disallowed_url_arr:
+        if(text in link):
+            return False
+    return True
 
 
 def save_report_csv():
+    global seed_count
     fields = ['URL', 'Number of outlinks']
     report_info.insert(0, fields)
-    filename = "report.csv"
+    filename = "report" + str(seed_count) + ".csv"
 
     # writing to csv file
     with open(filename, 'w', ) as csvfile:
@@ -21,18 +49,15 @@ def save_report_csv():
 def run_crawler(seed):
     debug = True
     depth = 0
-    maxDepth = 500
+    maxDepth = 50
+    report_info.clear()
 
     visited = []
-    # Prompt user for seed URL (hardcoded for now)
-    # Check robots.txt for any restricted pages
-    # Add url to the queue
     queue = []
 
     domain = seed.split("/")[2]
     queue.append(seed)
 
-    session = requests.Session()
     session.headers.update({'Host': domain,
                             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                             'Connection': 'keep-alive',
@@ -78,7 +103,7 @@ def run_crawler(seed):
             elif link[0:4] == "http":
                 if(domain == link.split("/")[2]):
                     #print("adding " + link["href"])
-                    if((link not in visited) and (link not in queue)):
+                    if((link not in visited) and (link not in queue) and isAllowed(link)):
                         queue.append(link)
                         num_outLinks += 1
             else:
@@ -89,7 +114,7 @@ def run_crawler(seed):
                 # Link in this case is not a direct link, looks something like this /blog_portal/category/fashion/ranking/
                 # domain would just be ameblo.jp
                 newLink = "https://" + domain + link
-                if((newLink not in visited) and (newLink not in queue)):
+                if((newLink not in visited) and (newLink not in queue) and isAllowed(link)):
                     queue.append(newLink)
                     num_outLinks += 1
         report_info.append([currentUrl, num_outLinks])
@@ -105,15 +130,19 @@ def run_crawler(seed):
               "\tVisited length: " + str(len(visited)))
 
     save_report_csv()
+    disallowed_url_arr.clear()
 
 
 def main():
     # seed = "https://www.japscan.ws/"
+    global seed_count
     while(True):
         seed = input('Enter seed URL (or \'exit\' to end): \n')
         if(seed == 'exit'):
             break
         else:
+            seed_count += 1
+            init_robot_info(seed)
             run_crawler(seed)
 
 
