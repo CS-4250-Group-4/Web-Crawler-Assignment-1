@@ -1,4 +1,4 @@
-import requests, time, csv
+import requests, time, csv, os
 from bs4 import BeautifulSoup
 from typing import Counter
 from asyncio.windows_events import NULL
@@ -8,13 +8,17 @@ report_info = []
 disallowed_url_arr = []
 seed_count = 0
 word_count = {}
-
+#Check if the repository folder exists, if it doesnt make it
+savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\"
+if not os.path.exists(savePath):
+    os.makedirs(savePath)
+    
 session = requests.Session()
 
 def crawl(seed):
     debug = True
     depth = 0
-    maxDepth = 100
+    maxDepth = 500
     visited = []
     #Prompt user for seed URL (hardcoded for now)
     #Check robots.txt for any restricted pages
@@ -56,7 +60,13 @@ def crawl(seed):
         visited.append(currentUrl)
 
         try:
+            #get the current page's html
             page = session.get(currentUrl, timeout=5)
+            #save the current page's html to the repositroy folder
+            completePath = os.path.normpath(savePath + str(depth) + ".html")
+            with open(completePath, 'w', encoding="utf-8") as file:
+                file.write(page.text)
+                
         except requests.exceptions.Timeout:
             num_try = 0
             while(num_try < 5):
@@ -223,4 +233,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
