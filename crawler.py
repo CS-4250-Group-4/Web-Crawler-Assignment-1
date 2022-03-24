@@ -9,6 +9,10 @@ disallowed_url_arr = []
 seed_count = 0
 word_count = {}
 
+#For indexing
+inverted_index = {}
+
+
 #Check if the repository folder exists, if it doesnt make it
 savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\"
 if not os.path.exists(savePath):
@@ -85,6 +89,8 @@ def crawl(seed, count_seed):
 
         #Count word for each url that is going to be visited
         start_wordcount(page)
+        counter = Counter(word_count)
+        most_frequent = counter.most_common(100)
 
         #time.sleep(.01)
         soup = BeautifulSoup(page.text, 'html.parser')
@@ -127,10 +133,16 @@ def crawl(seed, count_seed):
         report_info.append([currentUrl, num_outLinks])
     
     #Get top 100 words with count and write to .csv file
-    counter = Counter(word_count)
-    most_frequent = counter.most_common(100)    
+    #counter = Counter(word_count)
+    #most_frequent = counter.most_common(100)    
     save_wordcount_csv(most_frequent, count_seed)
     word_count.clear()
+    doc_count = 1
+    for link in visited:
+        page = session.get(link, timeout=5)
+        start_indexing(page, doc_count, most_frequent)
+        doc_count += 1
+
 
     if (debug):
         for link in queue:
@@ -142,6 +154,49 @@ def crawl(seed, count_seed):
               "\tVisited length: " + str(len(visited)))
 
     save_report_csv(count_seed)
+    save_inverted_index(inverted_index)
+
+def start_indexing(url, doc_count, most_frequent):
+    #Create empty list for words that need to be cleaned
+    word_list = []
+    page = url
+    soup = BeautifulSoup(page.text, 'html.parser')
+    tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p']
+    #Get text from the page
+    for each_text in soup.findAll(tags):
+        content = each_text.text
+        words = content.lower().split()
+        #Append it to the wordlist and then clean the words of all symbols
+        for each_word in words:
+            word_list.append(each_word)
+    rid_symbols_indexing(word_list, doc_count, most_frequent)
+
+def rid_symbols_indexing(word_list, doc_count, most_frequent):
+    final_word_list = []
+
+    #Clean the words from any symbols
+    for word in word_list:
+        symbols = '!@#$%^&*()_-+={[}]|\;:"<>?/., '
+        for i in range (0, len(symbols)):
+            word = word.replace (symbols[i], '')
+        if len(word) > 0:
+            final_word_list.append(word)
+    
+    most_frequent_list = [word[0] for word in most_frequent]
+    for word in most_frequent_list:
+        if word in final_word_list:
+            if word in inverted_index:
+                inverted_index[word].add(doc_count)
+            else:
+                inverted_index[word] = {doc_count}
+
+def save_inverted_index(inverted_index):
+    filename = "InvertedIndex"
+
+    with open(filename, 'w') as f: 
+        for key, value in inverted_index.items(): 
+            f.write('%s:%s\n' % (key, value))
+
 
 def save_wordcount_csv(most_frequent, count_seed):
     fields = ['Word', 'Count']
