@@ -3,6 +3,7 @@ import requests, time, csv, os
 from bs4 import BeautifulSoup
 from typing import Counter
 from asyncio.windows_events import NULL
+import matplotlib.pyplot as plt
 
 report_info = []
 disallowed_url_arr = []
@@ -19,7 +20,7 @@ session = requests.Session()
 def crawl(seed, count_seed):
     debug = True
     depth = 0
-    maxDepth = 350
+    maxDepth = 500
     visited = []
     
     #Check robots.txt for any restricted pages
@@ -169,8 +170,9 @@ def start_wordcount(url):
             word_list.append(each_word)
     rid_symbols(word_list)
 
+final_word_list = []
 def rid_symbols(word_list):
-    final_word_list = []
+    #final_word_list = []
 
     #Clean the words from any symbols
     for word in word_list:
@@ -183,6 +185,13 @@ def rid_symbols(word_list):
     #Create a dictionary of all the words and start counting
     create_dictionary(final_word_list)
 
+
+total_word_count = []
+unique_words_list = []
+total_unique_words = []
+datapointsX = []
+datapointsY = []
+#[[262, 194], [4199,1067], [], [], []]
 def create_dictionary(final_word_list):
     #Check if word is already in list, if so then add to its counter, if not then add word and begin counting
     for word in final_word_list:
@@ -190,6 +199,18 @@ def create_dictionary(final_word_list):
             word_count[word] += 1
         else:
             word_count[word] = 1
+
+    # Print total number of words in each link (x)
+    total_word_count = len(final_word_list)
+
+    # Print total number of unique words in each link (y)
+    for i in final_word_list:
+        if not i in unique_words_list:
+            unique_words_list.append(i)
+            total_unique_words = len(unique_words_list)
+    
+    datapointsX.append(total_word_count)
+    datapointsY.append(len(unique_words_list))
 
 def init_robot_info(link):
     disallowed_url_arr.clear()
@@ -233,6 +254,25 @@ def main():
         else:
             count_seed = count_seed + 1
             crawl(seed, count_seed)
+        # Create graph with total words on x-axis and unique words on y-axis
+        # x-axis values
+        x = datapointsX
+        # y-axis values
+        y = datapointsY
+        print(x)
+        print(y)
+        # plotting points as a scatter plot
+        plt.scatter(x, y, label="star", color="black", marker="*", s=30)
+        # x-axis label
+        plt.xlabel('x - axis')
+        # frequency label
+        plt.ylabel('y - axis')
+        # plot title
+        plt.title('Heaps Law')
+        # showing legend
+        plt.legend()
+        # function to show the plot
+        plt.show()
 
 if __name__ == '__main__':
     main()
