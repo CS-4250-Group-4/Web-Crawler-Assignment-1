@@ -3,11 +3,17 @@ import requests, time, csv, os
 from bs4 import BeautifulSoup
 from typing import Counter
 from asyncio.windows_events import NULL
+import matplotlib.pyplot as plt
 
 report_info = []
 disallowed_url_arr = []
 seed_count = 0
 word_count = {}
+unique_words_list = []
+total_unique_words = 0
+total_word_count = 0
+top100 = []
+top100Count = []
 
 #Check if the repository folder exists, if it doesnt make it
 savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\"
@@ -17,9 +23,9 @@ if not os.path.exists(savePath):
 session = requests.Session()
 
 def crawl(seed, count_seed):
-    debug = True
+    debug = False
     depth = 0
-    maxDepth = 350
+    maxDepth = 500
     visited = []
     
     #Check robots.txt for any restricted pages
@@ -140,6 +146,10 @@ def crawl(seed, count_seed):
             print(link)
         print("\nQueue length: " + str(len(queue)) +
               "\tVisited length: " + str(len(visited)))
+        
+    for i in range(len(most_frequent) - 1):
+        top100.append(most_frequent[i + 1][0])
+        top100Count.append(most_frequent[i + 1][1]/total_word_count)
 
     save_report_csv(count_seed)
 
@@ -183,13 +193,22 @@ def rid_symbols(word_list):
     #Create a dictionary of all the words and start counting
     create_dictionary(final_word_list)
 
+
 def create_dictionary(final_word_list):
+    global total_word_count
     #Check if word is already in list, if so then add to its counter, if not then add word and begin counting
     for word in final_word_list:
         if word in word_count:
             word_count[word] += 1
         else:
             word_count[word] = 1
+
+    # Print total number of unique words in each link (y)
+    for i in final_word_list:
+        total_word_count = total_word_count + 1
+        if not i in unique_words_list:
+            unique_words_list.append(i)
+            total_unique_words = len(unique_words_list)
 
 def init_robot_info(link):
     disallowed_url_arr.clear()
@@ -233,6 +252,39 @@ def main():
         else:
             count_seed = count_seed + 1
             crawl(seed, count_seed)
+        
+        # Create graph with total words on x-axis and unique words on y-axis
+        # x-axis values
+        x = []
+        for i in range(100):
+            x.append(i+1)
+        # y-axis values
+        y = top100Count
+        
+        # plotting points as a scatter plot
+        plt.scatter(x, y, label="star", color="black", marker="*", s=30)
+        # x-axis label
+        plt.xlabel('Word Rank')
+        # frequency label
+        plt.ylabel('Word probability')
+        # plot title
+        plt.title('Zipf\'s Law')
+        # showing legend
+        plt.legend()
+        # function to show the plot
+        plt.show()
 
 if __name__ == '__main__':
     main()
+
+
+#Zipfs law brainstorming
+    """
+    Graphing a words rank on the x axis and frequency on the y axis
+    rank will be taken from the array that someone else made []
+    frequency will be number of occurences/total word count
+    
+    
+    most_frequent 100 most frequent
+    
+    """
