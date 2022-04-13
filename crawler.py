@@ -71,7 +71,7 @@ def crawl(seed, count_seed):
             page = session.get(currentUrl, timeout=5)
             if download:
                 #save the current page's html to the repositroy folder
-                completePath = os.path.normpath(savePath + str(depth) + ".html")
+                completePath = os.path.normpath(savePath + seed.split(":")[1] + "\\" + str(depth) + ".html")
                 with open(completePath, 'w', encoding="utf-8") as file:
                     file.write(page.text)
                 
@@ -238,6 +238,15 @@ def main():
         else:
             crawlStart = time.time()
             count_seed = count_seed + 1
+            #Create a new folder to hold this crawl's pages
+            if download:
+                #Check if the repository folder exists, if it doesnt make it
+                #savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\Crawl" + str(count_seed) + "_" + seed
+                print("seed: " + seed)
+                savePath = os.path.dirname(os.path.abspath(__file__)) + "\\repository\\" + seed.split(":")[1]
+                #If the folder doesn't exist, make it
+                if not os.path.exists(savePath):
+                    os.makedirs(savePath)
             crawl(seed, count_seed)
             crawlStop = time.time()
             print("Crawl took " + str(round(crawlStop - crawlStart, 4)) + " seconds")
