@@ -4,6 +4,10 @@ from bs4 import BeautifulSoup
 from typing import Counter
 from asyncio.windows_events import NULL
 
+#Whether or not to download each page visited
+download = True
+#
+
 report_info = []
 disallowed_url_arr = []
 seed_count = 0
@@ -17,9 +21,9 @@ if not os.path.exists(savePath):
 session = requests.Session()
 
 def crawl(seed, count_seed):
-    debug = True
+    debug = False
     depth = 0
-    maxDepth = 350
+    maxDepth = 500
     visited = []
     
     #Check robots.txt for any restricted pages
@@ -65,10 +69,11 @@ def crawl(seed, count_seed):
         try:
             #get the current page's html
             page = session.get(currentUrl, timeout=5)
-            #save the current page's html to the repositroy folder
-            completePath = os.path.normpath(savePath + str(depth) + ".html")
-            with open(completePath, 'w', encoding="utf-8") as file:
-                file.write(page.text)
+            if download:
+                #save the current page's html to the repositroy folder
+                completePath = os.path.normpath(savePath + str(depth) + ".html")
+                with open(completePath, 'w', encoding="utf-8") as file:
+                    file.write(page.text)
                 
         except requests.exceptions.Timeout:
             num_try = 0
@@ -231,8 +236,11 @@ def main():
         if(seed == 'done'):
             break
         else:
+            crawlStart = time.time()
             count_seed = count_seed + 1
             crawl(seed, count_seed)
+            crawlStop = time.time()
+            print("Crawl took " + str(round(crawlStop - crawlStart, 4)) + " seconds")
 
 if __name__ == '__main__':
     main()
